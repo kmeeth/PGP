@@ -1,7 +1,7 @@
-from api import *
+import api
 
 if __name__ == "__main__":
-    for i in range(4):
-        imported_ring = update_imported_ring("kmeeth")
-        for key in imported_ring:
-            print(key)
+    api.private_ring = api.update_private_ring("kmeeth", "dobrojutro", 1024)
+    api.imported_ring = api.update_imported_ring("kmeeth")
+    for key in api.imported_ring:
+        print(key)
