@@ -1,7 +1,11 @@
 import api
+import models
 
 if __name__ == "__main__":
-    api.private_ring = api.update_private_ring("kmeeth", "dobrojutro", 1024)
-    api.imported_ring = api.update_imported_ring("kmeeth")
-    for key in api.imported_ring:
-        print(key)
+    key_pair = models.KeyPair.generate("kmeeth", 1024)
+    id = key_pair.public_key.public_numbers().n % (1 << 64)
+    print(id)
+    print(key_pair)
+    key_pair.save("dobrojutro")
+    key_pair = models.KeyPair.load("kmeeth", id, "dobrojutro")
+    print(key_pair)
