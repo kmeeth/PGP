@@ -30,13 +30,13 @@ class ImportedKey:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        with open(f"{self.user}/{self.public_key.public_numbers().n % (1 << 64)}_public.pem", 'wb') as public_key_file:
+        with open(f"{self.user}/import/{self.public_key.public_numbers().n % (1 << 64)}_public.pem", 'wb') as public_key_file:
             public_key_file.write(public_pem)
 
 
     @staticmethod
     def load(user, id):
-        with open(f"{user}/{id}_public.pem", 'rb') as public_key_file:
+        with open(f"{user}/import/{id}_public.pem", 'rb') as public_key_file:
             public_pem = public_key_file.read()
         public_key = serialization.load_pem_public_key(public_pem)
         return ImportedKey(user, public_key)
@@ -82,28 +82,28 @@ class KeyPair:
 
     def save(self, password):
         id = self.public_key.public_numbers().n % (1 << 64)
-        os.makedirs(self.user, exist_ok=True)
+        os.makedirs(f"{self.user}/private", exist_ok=True)
         # Save private key
         private_pem = self.private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.BestAvailableEncryption(password.encode())
         )
-        with open(f"{self.user}/{id}_private.pem", 'wb') as private_pem_file:
+        with open(f"{self.user}/private/{id}_private.pem", 'wb') as private_pem_file:
             private_pem_file.write(private_pem)
         # Save public key
         public_pem = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        with open(f"{self.user}/{id}_public.pem", 'wb') as public_pem_file:
+        with open(f"{self.user}/private/{id}_public.pem", 'wb') as public_pem_file:
             public_pem_file.write(public_pem)
         # Save hashed password, for checking
         password = password.encode()
         digest = hashes.Hash(hashes.SHA1())
         digest.update(password)
         password_hash = digest.finalize()
-        with open(f"{self.user}/{id}_password.hash", 'wb') as password_file:
+        with open(f"{self.user}/private/{id}_password.hash", 'wb') as password_file:
             password_file.write(password_hash)
 
 
@@ -113,20 +113,20 @@ class KeyPair:
         digest.update(password.encode())
         password_hash = digest.finalize()
         # Check password hash
-        with open(f"{user}/{id}_password.hash", 'rb') as password_file:
+        with open(f"{user}/private/{id}_password.hash", 'rb') as password_file:
             password_hash_file = password_file.read()
             # Hash mismatch, return None
             if(password_hash_file != password_hash):
                 return None
         # Load private key
-        with open(f"{user}/{id}_private.pem", 'rb') as private_pem_file:
+        with open(f"{user}/private/{id}_private.pem", 'rb') as private_pem_file:
             private_pem = private_pem_file.read()
         private_key = serialization.load_pem_private_key(
             private_pem,
             password=password.encode()
         )
         # Load public key
-        with open(f"{user}/{id}_public.pem", 'rb') as public_pem_file:
+        with open(f"{user}/private/{id}_public.pem", 'rb') as public_pem_file:
             public_pem = public_pem_file.read()
         public_key = serialization.load_pem_public_key(public_pem)
         return KeyPair(user, private_key, public_key)

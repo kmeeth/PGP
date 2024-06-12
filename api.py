@@ -2,14 +2,18 @@ from typing import List
 from models import *
 import secrets
 
-imported_ring: List[ImportedKey] = []
-private_ring: List[KeyPair] = []
+# These are user : ring dicts
+# Ring is a list of keys for public, and pairs for private
+imported_rings = {}
+private_rings = {}
+
+current_user = "kmeeth"
 
 
 def update_imported_ring(user):
-    return [ImportedKey(user, private_ring[0].public_key)]
+    return None
 
 
-def update_private_ring(user, password, size):
-    return [KeyPair(user, password, size)]
+def update_private_ring(user):
+    return None
 
