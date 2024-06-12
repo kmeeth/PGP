@@ -31,14 +31,14 @@ class ImportedKey:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        with open(f"{owner}/import/{self.public_key.public_numbers().n % (1 << 64)}_{self.user}_public.pem", 'wb') as public_key_file:
+        with open(f"{owner}/import/{self.public_key.public_numbers().n % (1 << 64)}_{self.user}.pem", 'wb') as public_key_file:
             public_key_file.write(public_pem)
 
 
     # Load user's public key with a given id from owner's storage
     @staticmethod
     def load(owner, user, id):
-        with open(f"{owner}/import/{id}_{user}_public.pem", 'rb') as public_key_file:
+        with open(f"{owner}/import/{id}_{user}.pem", 'rb') as public_key_file:
             public_pem = public_key_file.read()
         public_key = serialization.load_pem_public_key(public_pem)
         return ImportedKey(user, public_key)
@@ -95,35 +95,22 @@ class KeyPair:
         )
         with open(f"{self.user}/private/{id}_public.pem", 'wb') as public_pem_file:
             public_pem_file.write(public_pem)
-        # Save hashed password, for checking
-        password = password.encode()
-        digest = hashes.Hash(hashes.SHA1())
-        digest.update(password)
-        password_hash = digest.finalize()
-        with open(f"{self.user}/private/{id}_password.hash", 'wb') as password_file:
-            password_file.write(password_hash)
 
 
     @staticmethod
     def load(user, id, password, check_password):
-        digest = hashes.Hash(hashes.SHA1())
-        digest.update(password.encode())
-        password_hash = digest.finalize()
-        # Check password hash
-        with open(f"{user}/private/{id}_password.hash", 'rb') as password_file:
-            password_hash_file = password_file.read()
-            # Hash mismatch, return None
-            if(check_password and password_hash_file != password_hash):
-                print("Wrong password")
-                return None
         # Load private key
         with open(f"{user}/private/{id}_private.pem", 'rb') as private_pem_file:
             private_pem = private_pem_file.read()
         if check_password:
-            private_key = serialization.load_pem_private_key(
-                private_pem,
-                password=password.encode()
-            )
+            try:
+                private_key = serialization.load_pem_private_key(
+                    private_pem,
+                    password=password.encode()
+                )
+            # Wrong password
+            except:
+                return None
         else:
             private_key = "SECRET"
         # Load public key

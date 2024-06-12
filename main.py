@@ -15,4 +15,4 @@ if __name__ == "__main__":
     print(api.private_rings["kmeeth"][0])
     print(api.import_rings["kmeeth"][0])
     print(api.private_rings["rahel"][0])
-    print(api.import_rings["rahel"][0])
+    #print(api.import_rings["rahel"][0])

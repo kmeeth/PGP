@@ -18,7 +18,7 @@ def update_import_ring(owner):
     os.makedirs(dir, exist_ok=True)
     for file in os.listdir(dir):
         id = (int)(file.split('_')[0])
-        user = file.split('_')[1]
+        user = file.split('_')[1].split('.')[0]
         ring.append(models.ImportedKey.load(owner, user, id))
     return ring
 
@@ -34,4 +34,3 @@ def update_private_ring(user):
             continue
         ring.append(models.KeyPair.load(user, id, "x", False))
     return ring
-
