@@ -24,19 +24,21 @@ class ImportedKey:
         return public.hex()
 
 
-    def save(self):
-        os.makedirs(self.user, exist_ok=True)
+    # Save public key of self.user into owner's storage
+    def save(self, owner):
+        os.makedirs(f"{owner}/import", exist_ok=True)
         public_pem = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        with open(f"{self.user}/import/{self.public_key.public_numbers().n % (1 << 64)}_public.pem", 'wb') as public_key_file:
+        with open(f"{owner}/import/{self.public_key.public_numbers().n % (1 << 64)}_{self.user}_public.pem", 'wb') as public_key_file:
             public_key_file.write(public_pem)
 
 
+    # Load user's public key with a given id from owner's storage
     @staticmethod
-    def load(user, id):
-        with open(f"{user}/import/{id}_public.pem", 'rb') as public_key_file:
+    def load(owner, user, id):
+        with open(f"{owner}/import/{id}_{user}_public.pem", 'rb') as public_key_file:
             public_pem = public_key_file.read()
         public_key = serialization.load_pem_public_key(public_pem)
         return ImportedKey(user, public_key)
