@@ -70,16 +70,11 @@ class KeyPair:
 
 
     def get_string_representations(self):
-        private = self.private_key.private_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption())
-
         public = self.public_key.public_bytes(
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo)
 
-        return public.hex(), private.hex()
+        return public.hex(), "SECRET"
 
 
     def save(self, password):
@@ -110,7 +105,7 @@ class KeyPair:
 
 
     @staticmethod
-    def load(user, id, password):
+    def load(user, id, password, check_password):
         digest = hashes.Hash(hashes.SHA1())
         digest.update(password.encode())
         password_hash = digest.finalize()
@@ -118,15 +113,19 @@ class KeyPair:
         with open(f"{user}/private/{id}_password.hash", 'rb') as password_file:
             password_hash_file = password_file.read()
             # Hash mismatch, return None
-            if(password_hash_file != password_hash):
+            if(check_password and password_hash_file != password_hash):
+                print("Wrong password")
                 return None
         # Load private key
         with open(f"{user}/private/{id}_private.pem", 'rb') as private_pem_file:
             private_pem = private_pem_file.read()
-        private_key = serialization.load_pem_private_key(
-            private_pem,
-            password=password.encode()
-        )
+        if check_password:
+            private_key = serialization.load_pem_private_key(
+                private_pem,
+                password=password.encode()
+            )
+        else:
+            private_key = "SECRET"
         # Load public key
         with open(f"{user}/private/{id}_public.pem", 'rb') as public_pem_file:
             public_pem = public_pem_file.read()
