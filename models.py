@@ -112,7 +112,7 @@ class KeyPair:
             except:
                 return None
         else:
-            private_key = "SECRET"
+            private_key = None
         # Load public key
         with open(f"{user}/private/{id}_public.pem", 'rb') as public_pem_file:
             public_pem = public_pem_file.read()
