@@ -37,7 +37,7 @@ def update_private_ring(user):
 
 
 def send_message(message, sender_key_pair, recipient_public_key, need_signature, need_confidentiality, encryption_algorithm):
-    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.public_key}\n{message}", 'utf-8')
+    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.id()}\n{message}", 'utf-8')
     separator = b"||||||||"
     hasher = hashes.Hash(hashes.SHA1())
     hasher.update(X)
