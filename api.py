@@ -48,7 +48,7 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
             padding.PKCS1v15(),
             hashes.SHA1()
         )
-        X = hashed_message + separator + signature
+        X = X + separator + signature
 
     X = zlib.compress(X)
 

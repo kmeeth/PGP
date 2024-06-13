@@ -17,4 +17,4 @@ if __name__ == "__main__":
     print(api.private_rings["kmeeth"][0])
     print(api.import_rings["kmeeth"][0])
 
-    api.send_message("Nina kurva", loaded_key, api.import_rings["kmeeth"][0], False, False, None)
+    api.send_message("Hello world", loaded_key, api.import_rings["kmeeth"][0], True, False, None)
