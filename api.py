@@ -42,7 +42,7 @@ def update_private_ring(user):
 
 
 def send_message(message, sender_key_pair, recipient_public_key, need_signature, encryption_algorithm, filename):
-    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.id()}\nTo: {recipient_public_key.id()}\n{message}", 'utf-8')
+    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.user}\nTo: {recipient_public_key.user}\n{message}", 'utf-8')
     separator = b"||||||||"
     hasher = hashes.Hash(hashes.SHA1())
     hasher.update(X)
@@ -75,7 +75,7 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
         )
         X = encrypted_message + separator + encrypted_key + separator + bytes(encryption_algorithm, 'utf-8') + separator + bytes(str(sender_key_pair.id()), 'utf-8')
 
-    # R64 here
+    X = base64.b64encode(X)
 
     os.makedirs("messages", exist_ok=True)
     with open(f"messages/{filename}", 'wb') as file:
