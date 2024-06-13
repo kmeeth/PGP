@@ -16,6 +16,10 @@ class ImportedKey:
         self.user = user
 
 
+    def id(self):
+        return self.public_key.public_numbers().n % (1 << 64)
+
+
     def get_string_representation(self):
         public = self.public_key.public_bytes(
             encoding=serialization.Encoding.DER,
@@ -31,7 +35,7 @@ class ImportedKey:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        with open(f"{owner}/import/{self.public_key.public_numbers().n % (1 << 64)}_{self.user}.pem", 'wb') as public_key_file:
+        with open(f"{owner}/import/{self.id()}_{self.user}.pem", 'wb') as public_key_file:
             public_key_file.write(public_pem)
 
 
@@ -45,7 +49,7 @@ class ImportedKey:
 
 
     def __str__(self):
-        return f"{self.user}\t{self.public_key.public_numbers().n % (1 << 64)}\t{self.get_string_representation()}"
+        return f"{self.user}\t{self.id()}\t{self.get_string_representation()}"
 
 
 class KeyPair:
@@ -82,7 +86,7 @@ class KeyPair:
 
 
     def save(self, password):
-        id = self.public_key.public_numbers().n % (1 << 64)
+        id = self.id()
         os.makedirs(f"{self.user}/private", exist_ok=True)
         # Save private key
         private_pem = self.private_key.private_bytes(
@@ -125,4 +129,4 @@ class KeyPair:
 
 
     def __str__(self):
-        return f"{self.user}\t{self.public_key.public_numbers().n % (1 << 64)}\t{self.get_string_representations()[0]}\t{self.get_string_representations()[1]}"
+        return f"{self.user}\t{self.id()}\t{self.get_string_representations()[0]}\t{self.get_string_representations()[1]}"

@@ -12,7 +12,9 @@ if __name__ == "__main__":
     api.private_rings["kmeeth"] = api.update_private_ring("kmeeth")
     api.import_rings["rahel"] = api.update_import_ring("rahel")
     api.private_rings["rahel"] = api.update_private_ring("rahel")
+
+    loaded_key = models.KeyPair.load("kmeeth",api.private_rings["kmeeth"][0].id(), "dobrojutro", True)
     print(api.private_rings["kmeeth"][0])
     print(api.import_rings["kmeeth"][0])
-    print(api.private_rings["rahel"][0])
-    #print(api.import_rings["rahel"][0])
+
+    api.send_message("Nina kurva", loaded_key, api.import_rings["kmeeth"][0], False, False, None)

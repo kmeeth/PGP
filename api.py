@@ -1,8 +1,8 @@
-from typing import List
-
+import zlib
+from datetime import datetime
+from cryptography.hazmat.primitives.asymmetric import padding
 import models
 from models import *
-import secrets
 
 # These are user : ring dicts
 # Ring is a list of keys for public, and pairs for private
@@ -34,3 +34,26 @@ def update_private_ring(user):
             continue
         ring.append(models.KeyPair.load(user, id, "x", False))
     return ring
+
+
+def send_message(message, sender_key_pair, recipient_public_key, need_signature, need_confidentiality, encryption_algorithm):
+    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.public_key}\n{message}", 'utf-8')
+    separator = b"||||||||"
+    hasher = hashes.Hash(hashes.SHA1())
+    hasher.update(X)
+    hashed_message = hasher.finalize()
+    if need_signature:
+        signature = sender_key_pair.private_key.sign(
+            hashed_message,
+            padding.PKCS1v15(),
+            hashes.SHA1()
+        )
+        X = hashed_message + separator + signature
+
+    X = zlib.compress(X)
+
+    if need_confidentiality:
+        session_key = os.urandom(16)
+        
+    print(X)
+
