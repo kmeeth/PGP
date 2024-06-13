@@ -54,6 +54,10 @@ class KeyPair:
     private_key = None
 
 
+    def id(self):
+        return self.public_key.public_numbers().n % (1 << 64)
+
+
     @staticmethod
     def generate(user, size):
         # Generate private key
