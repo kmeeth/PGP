@@ -18,4 +18,4 @@ if __name__ == "__main__":
     print(api.import_rings["kmeeth"][0])
 
     enc = api.send_message("Hello world", loaded_key, api.import_rings["kmeeth"][0], True, 'CAST5', "msg.txt")
-    print(enc)
+    msg = api.receive_message("msg.txt", "rahel", api.private_rings["rahel"][0].id(), "dobrojutro")

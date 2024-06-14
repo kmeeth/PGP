@@ -16,6 +16,9 @@ private_rings = {}
 
 current_user = "kmeeth"
 
+# Used for concatenation
+separator = b"||||||||"
+flag_separator = b"########"
 
 def update_import_ring(owner):
     ring = []
@@ -42,12 +45,14 @@ def update_private_ring(user):
 
 
 def send_message(message, sender_key_pair, recipient_public_key, need_signature, encryption_algorithm, filename):
-    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.user}\nTo: {recipient_public_key.user}\n{message}", 'utf-8')
-    separator = b"||||||||"
-    hasher = hashes.Hash(hashes.SHA1())
-    hasher.update(X)
-    hashed_message = hasher.finalize()
+    # Load message with added info
+    X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.id()}\nTo: {recipient_public_key.id()}\n{message}", 'utf-8')
+
+    # Sign message if needed
     if need_signature:
+        hasher = hashes.Hash(hashes.SHA1())
+        hasher.update(X)
+        hashed_message = hasher.finalize()
         signature = sender_key_pair.private_key.sign(
             hashed_message,
             padding.PKCS1v15(),
@@ -55,16 +60,21 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
         )
         X = X + separator + signature
 
+    # Compress message
     X = zlib.compress(X)
 
+    # Encrypt message if needed
     if encryption_algorithm != None:
+        # Encrypt message with session key
         session_key = os.urandom(16)
+        print(session_key)
         cipher = Cipher(algorithms.CAST5(session_key) if encryption_algorithm == 'CAST5' else algorithms.AES128(session_key), modes.CFB(os.urandom(8 if encryption_algorithm == 'CAST5' else 16)))
         encryptor = cipher.encryptor()
         padder = PKCS7(16).padder()
         padded_data = padder.update(message.encode()) + padder.finalize()
         encrypted_message = encryptor.update(padded_data) + encryptor.finalize()
 
+        # Encrypt session key with recipient's public key
         encrypted_key = recipient_public_key.public_key.encrypt(
             session_key,
             padding.OAEP(
@@ -73,12 +83,61 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
                 label=None
             )
         )
-        X = encrypted_message + separator + encrypted_key + separator + bytes(encryption_algorithm, 'utf-8') + separator + bytes(str(sender_key_pair.id()), 'utf-8')
+        # Concatenate
+        X = encrypted_message + separator + encrypted_key
 
+    # Added tags
+    X = X + flag_separator + bytes(str(sender_key_pair.id()), 'utf-8')
+    X = X + separator + (b"SIGN" if need_signature else b"NOSIGN")
+    X = X + separator + (b"NOENC" if encryption_algorithm == None else bytes(encryption_algorithm, 'utf-8'))
+
+    # Base64
     X = base64.b64encode(X)
 
     os.makedirs("messages", exist_ok=True)
     with open(f"messages/{filename}", 'wb') as file:
         file.write(X)
     return X
+
+
+def receive_message(filename, recipient_user, recipient_id, recipient_password):
+    # Read message
+    with open(f"messages/{filename}", 'rb') as file:
+        X = file.read()
+
+    # Base64 decode
+    X = base64.b64decode(X)
+    print(X)
+
+    # Get parts
+    flags = X.split(flag_separator)[1]
+    sender_id = int(flags.split(separator)[0].decode('utf-8'))
+    is_signed = (flags.split(separator)[1].decode('utf-8') == b"SIGN")
+    encryption_algorithm = flags.split(separator)[2].decode('utf-8')
+    if encryption_algorithm == "NOENC":
+        encryption_algorithm = None
+    X = X.split(flag_separator)[0]
+    print(X)
+
+    # Decrypt if needed
+    if encryption_algorithm != None:
+        encrypted_message = X.split(separator)[0]
+        encrypted_key = X.split(separator)[1]
+        recipient_key_pair = None
+        for key_pair in private_rings[recipient_user]:
+            if recipient_id == key_pair.id():
+                recipient_key_pair = key_pair
+                break
+        if recipient_key_pair == None:
+            return "Failed: This message does not seem to be for you."
+        recipient_key_pair = KeyPair.load(recipient_user, recipient_id, recipient_password, True)
+        session_key = recipient_key_pair.private_key.decrypt(
+            encrypted_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA1()),
+                algorithm=hashes.SHA1(),
+                label=None
+            )
+        )
+        print(session_key)
 
