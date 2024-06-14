@@ -67,11 +67,11 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
     if encryption_algorithm != None:
         # Encrypt message with session key
         session_key = os.urandom(16)
-        print(session_key)
-        cipher = Cipher(algorithms.CAST5(session_key) if encryption_algorithm == 'CAST5' else algorithms.AES128(session_key), modes.CFB(os.urandom(8 if encryption_algorithm == 'CAST5' else 16)))
+        iv = os.urandom(8 if encryption_algorithm == 'CAST5' else 16)
+        cipher = Cipher(algorithms.CAST5(session_key) if encryption_algorithm == 'CAST5' else algorithms.AES128(session_key), modes.CFB(iv))
         encryptor = cipher.encryptor()
         padder = PKCS7(16).padder()
-        padded_data = padder.update(message.encode()) + padder.finalize()
+        padded_data = padder.update(X) + padder.finalize()
         encrypted_message = encryptor.update(padded_data) + encryptor.finalize()
 
         # Encrypt session key with recipient's public key
@@ -84,7 +84,7 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
             )
         )
         # Concatenate
-        X = encrypted_message + separator + encrypted_key
+        X = encrypted_message + separator + encrypted_key + separator + iv
 
     # Added tags
     X = X + flag_separator + bytes(str(sender_key_pair.id()), 'utf-8')
@@ -107,7 +107,6 @@ def receive_message(filename, recipient_user, recipient_id, recipient_password):
 
     # Base64 decode
     X = base64.b64decode(X)
-    print(X)
 
     # Get parts
     flags = X.split(flag_separator)[1]
@@ -117,27 +116,31 @@ def receive_message(filename, recipient_user, recipient_id, recipient_password):
     if encryption_algorithm == "NOENC":
         encryption_algorithm = None
     X = X.split(flag_separator)[0]
-    print(X)
 
     # Decrypt if needed
     if encryption_algorithm != None:
         encrypted_message = X.split(separator)[0]
         encrypted_key = X.split(separator)[1]
-        recipient_key_pair = None
-        for key_pair in private_rings[recipient_user]:
-            if recipient_id == key_pair.id():
-                recipient_key_pair = key_pair
-                break
-        if recipient_key_pair == None:
-            return "Failed: This message does not seem to be for you."
+        iv = X.split(separator)[2]
         recipient_key_pair = KeyPair.load(recipient_user, recipient_id, recipient_password, True)
-        session_key = recipient_key_pair.private_key.decrypt(
-            encrypted_key,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA1()),
-                algorithm=hashes.SHA1(),
-                label=None
+        try:
+            session_key = recipient_key_pair.private_key.decrypt(
+                encrypted_key,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA1()),
+                    algorithm=hashes.SHA1(),
+                    label=None
+                )
             )
-        )
-        print(session_key)
+        except:
+            return "Failed: This message does not seem to be for this key pair."
+        decryptor = Cipher(
+            algorithms.CAST5(session_key) if encryption_algorithm == 'CAST5' else algorithms.AES(session_key),
+            modes.CFB(iv)
+        ).decryptor()
+        padded_message = decryptor.update(encrypted_message) + decryptor.finalize()
+        unpadder = PKCS7(16).unpadder()
+        X = unpadder.update(padded_message) + unpadder.finalize()
 
+    # Unzip
+    X = zlib.decompress(X)
