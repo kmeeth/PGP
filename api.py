@@ -100,7 +100,7 @@ def send_message(message, sender_key_pair, recipient_public_key, need_signature,
     return X
 
 
-def receive_message(filename, recipient_user, recipient_id, recipient_password):
+def receive_message(filename, recipient_user, recipient_id, recipient_password, output):
     # Read message
     with open(f"messages/{filename}", 'rb') as file:
         X = file.read()
@@ -111,7 +111,7 @@ def receive_message(filename, recipient_user, recipient_id, recipient_password):
     # Get parts
     flags = X.split(flag_separator)[1]
     sender_id = int(flags.split(separator)[0].decode('utf-8'))
-    is_signed = (flags.split(separator)[1].decode('utf-8') == b"SIGN")
+    is_signed = (flags.split(separator)[1].decode('utf-8') == "SIGN")
     encryption_algorithm = flags.split(separator)[2].decode('utf-8')
     if encryption_algorithm == "NOENC":
         encryption_algorithm = None
@@ -144,3 +144,36 @@ def receive_message(filename, recipient_user, recipient_id, recipient_password):
 
     # Unzip
     X = zlib.decompress(X)
+
+    # Verify identity of the sender if needed
+    if is_signed:
+        # Look for sender in import ring
+        sender_key = None
+        for import_key in import_rings[recipient_user]:
+            if import_key.id() == sender_id:
+                sender_key = import_key
+        if sender_key == None:
+            return "Failed: Unknown contact."
+
+        # Verify signature
+        try:
+            signature = X.split(separator)[1]
+            msg = X.split(separator)[0]
+            hasher = hashes.Hash(hashes.SHA1())
+            hasher.update(msg)
+            hashed_message = hasher.finalize()
+            sender_key.public_key.verify(
+                signature,
+                hashed_message,
+                padding.PKCS1v15(),
+                hashes.SHA1()
+            )
+        except:
+            return "Failed: Invalid signature."
+        X = X.split(separator)[0]
+
+    # Write to output
+    with open(f"messages/{output}", 'wb') as file:
+        file.write(X)
+    return X
+
