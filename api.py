@@ -123,6 +123,8 @@ def receive_message(filename, recipient_user, recipient_id, recipient_password, 
         encrypted_key = X.split(separator)[1]
         iv = X.split(separator)[2]
         recipient_key_pair = KeyPair.load(recipient_user, recipient_id, recipient_password, True)
+        if recipient_key_pair == None:
+            return "Failed: Wrong password."
         try:
             session_key = recipient_key_pair.private_key.decrypt(
                 encrypted_key,
