@@ -17,6 +17,9 @@ if __name__ == "__main__":
     print(api.private_rings["kmeeth"][0])
     print(api.import_rings["kmeeth"][0])
 
-    enc = api.send_message("Hello world", loaded_key, api.import_rings["kmeeth"][0], True, 'CAST5', "msg.txt")
+    enc = api.send_message("Hello world", loaded_key, api.import_rings["kmeeth"][0], False, "AES128", "msg.txt")
     msg = api.receive_message("msg.txt", "rahel", api.private_rings["rahel"][0].id(), "dobrojutro", "readable.txt")
     print(msg)
+
+    api.private_rings["kmeeth"] = api.delete_from_private_ring(api.private_rings["kmeeth"], "kmeeth", api.private_rings["kmeeth"][0].id())
+    print(api.private_rings)

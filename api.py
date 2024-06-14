@@ -44,6 +44,15 @@ def update_private_ring(user):
     return ring
 
 
+def delete_from_private_ring(ring, user, id):
+    dir = f"{user}/private"
+    os.makedirs(dir, exist_ok=True)
+    for file in os.listdir(dir):
+        if (int)(file.split('_')[0]) == id:
+            os.remove(f"{dir}/{file}")
+    return [x for x in ring if x.id() != id]
+
+
 def send_message(message, sender_key_pair, recipient_public_key, need_signature, encryption_algorithm, filename):
     # Load message with added info
     X = bytes(f"{str(datetime.now())}\nFrom: {sender_key_pair.id()}\nTo: {recipient_public_key.id()}\n{message}", 'utf-8')
