@@ -139,7 +139,6 @@ class KeyPair:
 
     # Export the public part of this pair to shared
     def export_to_shared(self):
-        export_key = ImportedKey(self.user, self.public_key)
         os.makedirs("shared", exist_ok=True)
         public_pem = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,

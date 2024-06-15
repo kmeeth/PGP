@@ -22,10 +22,15 @@ def gui_loop():
         [sg.Text("ID"), sg.InputText(key="-IMPORT_KEY_ID-")],
         [sg.Button("Import", key="-IMPORT_KEY-"), sg.Text("", key="-IMPORT_KEY_ERROR-")]
     ]
+    # Section for exporting a public part of a key pair into shared
+    export_section = [
+        [sg.Text("ID"), sg.InputText(key="-EXPORT_KEY_ID-"), sg.Button("Export", key="-EXPORT_KEY-")],
+        [sg.Text("", key="-EXPORT_KEY_ERROR-")]
+    ]
 
     # Layout definition
     layout = [
-        [sg.Frame("New Key Pair", new_section), sg.Frame("Delete Key Pair", delete_section), sg.Frame("Import Public Key", import_section)]
+        [sg.Frame("New Key Pair", new_section), sg.Frame("Delete Key Pair", delete_section), sg.Frame("Import Public Key", import_section), sg.Frame("Export Public Key", export_section)]
     ]
 
     # Window
@@ -56,9 +61,23 @@ def gui_loop():
             try:
                 imported_key = models.ImportedKey.import_from_shared(values["-IMPORT_KEY_USER-"], int(values["-IMPORT_KEY_ID-"]))
                 imported_key.save(api.current_user)
+                window["-IMPORT_KEY_ERROR-"].update(f"Imported {imported_key.id()}")
             except:
                 window["-IMPORT_KEY_ERROR-"].update("ID not a number or file was not found.")
-
+        elif event == "-EXPORT_KEY-":
+            try:
+                id = int(values["-EXPORT_KEY_ID-"])
+                correct_key = None
+                for key in api.private_rings[api.current_user]:
+                    if key.id() == id:
+                        correct_key = key
+                        break
+                if correct_key == None:
+                    raise
+                correct_key.export_to_shared()
+                window["-EXPORT_KEY_ERROR-"].update(f"Exported {id}.")
+            except:
+                window["-EXPORT_KEY_ERROR-"].update("ID not a number or no key with that ID.")
 
         api.refresh_state()
 
