@@ -48,6 +48,12 @@ class ImportedKey:
         return ImportedKey(user, public_key)
 
 
+    # Import user's key from shared
+    @staticmethod
+    def import_from_shared(user, id):
+        return ImportedKey.load("shared", user, id)
+
+
     def __str__(self):
         return f"{self.user}\t{self.id()}\t{self.get_string_representation()}"
 
@@ -126,6 +132,18 @@ class KeyPair:
             public_pem = public_pem_file.read()
         public_key = serialization.load_pem_public_key(public_pem)
         return KeyPair(user, private_key, public_key)
+
+
+    # Export the public part of this pair to shared
+    def export_to_shared(self):
+        export_key = ImportedKey(self.user, self.public_key)
+        os.makedirs("shared", exist_ok=True)
+        public_pem = self.public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        with open(f"shared/{self.id()}_{self.user}.pem", 'wb') as public_key_file:
+            public_key_file.write(public_pem)
 
 
     def __str__(self):
