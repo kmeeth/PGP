@@ -51,7 +51,10 @@ class ImportedKey:
     # Import user's key from shared
     @staticmethod
     def import_from_shared(user, id):
-        return ImportedKey.load("shared", user, id)
+        with open(f"shared/{id}_{user}.pem", 'rb') as public_key_file:
+            public_pem = public_key_file.read()
+        public_key = serialization.load_pem_public_key(public_pem)
+        return ImportedKey(user, public_key)
 
 
     def __str__(self):

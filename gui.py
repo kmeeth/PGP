@@ -16,10 +16,16 @@ def gui_loop():
         [sg.Button("Delete", key="-DELETE_KEY-")],
         [sg.Text("", key="-DELETE_KEY_ERROR-")]
     ]
+    # Section for importing a foreign key from shared into your import ring
+    import_section = [
+        [sg.Text("User"), sg.InputText(key="-IMPORT_KEY_USER-")],
+        [sg.Text("ID"), sg.InputText(key="-IMPORT_KEY_ID-")],
+        [sg.Button("Import", key="-IMPORT_KEY-"), sg.Text("", key="-IMPORT_KEY_ERROR-")]
+    ]
 
     # Layout definition
     layout = [
-        [sg.Frame("New Key Pair", new_section), sg.Frame("Delete Key Pair", delete_section)]
+        [sg.Frame("New Key Pair", new_section), sg.Frame("Delete Key Pair", delete_section), sg.Frame("Import Public Key", import_section)]
     ]
 
     # Window
@@ -46,6 +52,13 @@ def gui_loop():
                 window["-DELETE_KEY_ERROR-"].update(f"Deleted {id}.")
             except:
                 window["-DELETE_KEY_ERROR-"].update("ID must be a number.")
+        elif event == "-IMPORT_KEY-":
+            try:
+                imported_key = models.ImportedKey.import_from_shared(values["-IMPORT_KEY_USER-"], int(values["-IMPORT_KEY_ID-"]))
+                imported_key.save(api.current_user)
+            except:
+                window["-IMPORT_KEY_ERROR-"].update("ID not a number or file was not found.")
+
 
         api.refresh_state()
 
