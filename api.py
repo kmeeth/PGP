@@ -6,6 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.padding import PKCS7
 
+import api
 import models
 from models import *
 
@@ -51,6 +52,11 @@ def delete_from_private_ring(ring, user, id):
         if (int)(file.split('_')[0]) == id:
             os.remove(f"{dir}/{file}")
     return [x for x in ring if x.id() != id]
+
+
+def refresh_state():
+    private_rings[current_user] = update_private_ring(current_user)
+    import_rings[current_user] = update_import_ring(current_user)
 
 
 def send_message(message, sender_key_pair, recipient_public_key, need_signature, encryption_algorithm, filename):
